@@ -74,18 +74,20 @@ local function from_bcd(n)
 end
 
 local function parse_file(filename)
-	RESULT = {}
-	SUCCESS = true
-	LINE_NUMBER = 1
+	local HANDLE, err_description = io.open(filename, "r")
+	if HANDLE == nil then
+		return {false, ("Could not open file for reading (%s)"):format(err_description)}
+	end
 
-	-- This does starts ignoring file contents when SUCCESS becomes false, but
-	-- does not stop iterating over lines, because we want the iterator given
-	-- to us by io.lines to reach the end of the file and close it.
-	--
-	-- According to #lua, it will close the file if it gets garbage collected,
-	-- so perhaps in the future we could just rely on that instead.
-	for line in io.lines(filename) do
-		if line:find("^%s*$") == nil and line:find("^%s*#.*$") == nil and SUCCESS then
+	local RESULT = {}
+	local SUCCESS = true
+	local LINE_NUMBER = 1
+
+	while SUCCESS do
+		local line = HANDLE:read("*line")
+		if line == nil then break end
+
+		if line:find("^%s*$") == nil and line:find("^%s*#.*$") == nil then
 			k, v = line:match("^%s*(.-)%s*=%s*(.-)%s*$")
 
 			if k == nil then
@@ -101,6 +103,7 @@ local function parse_file(filename)
 		end
 	end
 
+	HANDLE:close()
 	return {SUCCESS, RESULT}
 end
 
