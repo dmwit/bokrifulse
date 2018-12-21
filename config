@@ -1,2 +1,11 @@
 version = 1
-problem = problems/basic
+problem = problems/drop-only-0-3-0
+problem = problems/drop-only-0-3-1
+problem = problems/drop-only-0-3-2
+problem = problems/drop-only-0-3-3
+problem = problems/drop-only-6-3-1
+problem = problems/drop-only-6-3-3
+problem = problems/drop-only-7-3-0
+problem = problems/drop-only-7-3-2
+problem = problems/handling
+problem = problems/timing
