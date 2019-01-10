@@ -39,6 +39,7 @@ local default_problem =
 	}
 local PROBLEMS = { default_problem }
 local CURRENT_PROBLEM = 1
+local SUCCESS_COUNT = 0
 
 -- Where you would write
 --     x <- act
@@ -262,6 +263,15 @@ local function reload_config()
 	end
 end
 
+local function change_problem()
+	reload_config()
+	SUCCESS_COUNT = 0
+	CURRENT_PROBLEM = CURRENT_PROBLEM + 1
+	if CURRENT_PROBLEM > #PROBLEMS then
+		CURRENT_PROBLEM = 1
+	end
+end
+
 local initial_state = 0 -- waiting for the user to start the game
 local virus_generation_state = 1 -- the game is picking random viruses, let's politely wait for it to finish
 local ready_state = 2 -- our turn: time modify the board and pill lookahead however we want
@@ -373,6 +383,13 @@ local function locked_action()
 		SUCCESS = SUCCESS or pill_orientation == goal_orientation
 	end
 	SUCCESS = SUCCESS and pill_x == problem.goal_x and pill_y == problem.goal_y
+
+	if SUCCESS then
+		SUCCESS_COUNT = SUCCESS_COUNT + 1
+		if SUCCESS_COUNT > 15 then
+			change_problem()
+		end
+	end
 
 	print('maneuver ' .. (SUCCESS and 'completed' or 'failed') .. ' in ' .. maneuver_frames .. ' frames')
 	CURRENT_STATE = ready_state
