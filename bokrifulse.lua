@@ -39,7 +39,10 @@ local default_problem =
 	}
 local PROBLEMS = { default_problem }
 local CURRENT_PROBLEM = 1
-local SUCCESS_COUNT = 0
+local SUCCESSES = {}
+local FAILURE_COUNT = 0
+local LAST_FAILURE = nil
+local LAST_FAILURE_FRAME = nil
 
 -- Where you would write
 --     x <- act
@@ -265,10 +268,46 @@ end
 
 local function change_problem()
 	reload_config()
-	SUCCESS_COUNT = 0
+	SUCCESSES = {}
+	FAILURE_COUNT = 0
 	CURRENT_PROBLEM = CURRENT_PROBLEM + 1
 	if CURRENT_PROBLEM > #PROBLEMS then
 		CURRENT_PROBLEM = 1
+	end
+end
+
+local success_color = "#287c0e"
+local failure_color = "#790c0c"
+local bg_color = "#b2bdff"
+local num_width_px = 6
+local num_height_px = 9
+local gui_padding_x_px = 9
+local gui_padding_y_px = 9
+local failure_display_time = 90 -- in frames
+
+local function render()
+	local success_count = #SUCCESSES
+
+	if success_count > 0 then
+		local SUM = 0
+		for i, n in pairs(SUCCESSES) do
+			SUM = SUM + n
+			gui.text(gui_padding_x_px, gui_padding_y_px + num_height_px*(i+1), ("%3d"):format(n), success_color, bg_color)
+		end
+		gui.text(gui_padding_x_px, gui_padding_y_px + num_height_px, ("%6.2f"):format(SUM/success_count), success_color, bg_color)
+	end
+
+	if success_count + FAILURE_COUNT > 0 then
+		local success_ratio = success_count / (success_count + FAILURE_COUNT)
+		gui.text(2*gui_padding_x_px + 6*num_width_px, gui_padding_y_px + num_height_px, ("%3.0f%%"):format(100*success_ratio), success_color, bg_color)
+	end
+
+	if LAST_FAILURE_FRAME then
+		gui.text(2*gui_padding_x_px + 6*num_width_px, gui_padding_y_px + 2*num_height_px, ("%3d"):format(LAST_FAILURE), failure_color, bg_color)
+		if LAST_FAILURE_FRAME + failure_display_time < emu.framecount() then
+			LAST_FAILURE = nil
+			LAST_FAILURE_FRAME = nil
+		end
 	end
 end
 
@@ -385,13 +424,17 @@ local function locked_action()
 	SUCCESS = SUCCESS and pill_x == problem.goal_x and pill_y == problem.goal_y
 
 	if SUCCESS then
-		SUCCESS_COUNT = SUCCESS_COUNT + 1
-		if SUCCESS_COUNT > 15 then
+		local success_count = #SUCCESSES
+		SUCCESSES[success_count+1] = maneuver_frames
+		if success_count >= 15 then
 			change_problem()
 		end
+	else
+		FAILURE_COUNT = FAILURE_COUNT + 1
+		LAST_FAILURE = maneuver_frames
+		LAST_FAILURE_FRAME = emu.framecount()
 	end
 
-	print('maneuver ' .. (SUCCESS and 'completed' or 'failed') .. ' in ' .. maneuver_frames .. ' frames')
 	CURRENT_STATE = ready_state
 end
 
@@ -407,4 +450,7 @@ local actions =
 	}
 
 reload_config()
-emu.registerbefore(function() actions[CURRENT_STATE]() end)
+emu.registerbefore(function()
+	actions[CURRENT_STATE]()
+	render()
+end)
