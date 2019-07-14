@@ -1,4 +1,11 @@
-[toc]
+# Table of Contents
+
+* Table of Contents
+* What is it?
+* Quick Start
+* Key-value files
+    * Configuration file
+    * Problem descriptions
 
 # What is it?
 
@@ -21,10 +28,8 @@ In the top left is the average successful frame count. Underneath the average, t
 
 1. Unzip [the latest release](https://github.com/dmwit/bokrifulse/releases) somewhere; I'll call the directory you chose DIR in the rest of these instructions.
 2. Start [fceux](http://www.fceux.com/web/home.html) and load the Dr. Mario ROM.
-3. Go to File &rarr; Load Lua Script and choose DIR/bokrifulse.lua.
+3. Go to File &rarr; Load Lua Script, navigate to DIR, and choose bokrifulse.lua.
 4. Start a 1 player game. I recommend choosing level 0, but the script will deal with it no matter what settings you choose.
-
-That's it!
 
 # Key-value files
 
@@ -34,13 +39,13 @@ Bo Krif Ulse stores all of its configuration and runtime data in key-value files
 
     dragons = cool
 
-is a valid key-value file that associates the key "dragons" with the list of values [cool]; both the first line and the blank line following it count as comments and are ignored. Some values have to be in a specific format. A precise description of the syntax and special value formats follows.
+is a valid key-value file that associates the key `dragons` with the list of values [`cool`]; both the first line and the blank line following it count as comments and are ignored. Some values have to be in a specific format. A precise description of the syntax and special value formats follows.
 
 Files are read in the latin-1 encoding because this is a lua script and I am lazy. A *whitespace character* is a tab, newline, vertical line feed, form feed, carriage return, or space (bytes 9, 10, 11, 12, 13, and 32). *Whitespace* is any sequence of whitespace characters (including the empty sequence). A *line break* is a newline, vertical line feed, form feed, or carriage return.
 
 A *key* is any sequence of characters other than `=` or line breaks which does not start with `#` or a whitespace character and does not end with a whitespace character. A *value* is any sequence of characters other than line breaks which does not start or end with a whitespace character.
 
-In this documentation, we use square brackets to enclose lists, and commas to separate values in the list. (There are no situations in this documentation where we need to describe a value which has a comma in it, so this syntax is unambiguous.)
+In this documentation, we use square brackets to enclose lists, and commas to separate values in the list. We use `monospace` for literal values and **bold** for metavariables standing in for a value; for example, [`foo`, **bar**] describes a list with two values in it, whose first value is exactly the string containing the characters `f`, `o`, and `o`, and whose second value can be referred to in surrounding text by the name **bar** but whose value we have not yet specified precisely.
 
 The denotation of a key-value file is a total mapping from keys to lists of values. Each line of the file is expected to be in one of three formats:
 
@@ -48,26 +53,37 @@ The denotation of a key-value file is a total mapping from keys to lists of valu
 2. A comment, which is whitespace, followed by the character `#`, followed by any characters at all. These lines are ignored.
 3. A key-value pair, which is whitespace, a key, whitespace, the character `=`, whitespace, a value, and whitespace. This adds the value to the list of values associated with the key.
 
-Keys not mentioned in the file text are associated with the empty list. Multiple lines with the same key are allowed; the list of values associated with that key will be in the same order as they are in the file.
+Keys not mentioned in the file text are associated with [ ]. Multiple lines with the same key are allowed; the list of values associated with that key will be in the same order as they are in the file.
 
-Below we will describe some *formats*, which assign special meanings to specific keys. For a particular format, a key may have a *default*, which is a value. If a key has a default in some format, then any key-value file whose denotation maps that key to the empty list will behave instead as if it maps that key to the singleton list containing the default.
+Below we will describe some *formats*, which assign special meanings to specific keys. For a particular format, a key may have a *default*, which is a value. If a key has default **d** in some format, then any key-value file whose denotation maps that key to [ ] will behave instead as if it maps that key to [**d**].
 
-A *number* value in any format that lua's `tonumber` turns into a whole number. When giving bounds on these numbers, the bounds are inclusive. A *single number* is a singleton list with a number in it.
+A *number* is a value in any format that lua's `tonumber` turns into a whole number. When giving bounds on these numbers, the bounds are inclusive. A *single number* is [**n**] where **n** is a number.
+
+A *color character* is one of the characters `b`, `r`, `y`, `B`, `R`, or `Y`, with the following meaning:
+
+| Character | Meaning |
+|:---------:|:------- |
+|`b`|blue|
+|`B`|blue|
+|`r`|red|
+|`R`|red|
+|`y`|yellow|
+|`Y`|yellow|
 
 ## Configuration file
 
 The top-level configuration must be stored in a file named `config` in the same directory as the `bokrifulse.lua` script itself. It is a key-value file, and gives the following keys special meaning:
 
-* `version`: Must be the singleton list containing the value `1`.
+* `version`: Must be [`1`].
 * `problem`: The values in this list are treated as filenames. They should be relative paths, and will be interpreted as relative to the directory containing `bokrifulse.lua`. Each file referenced will be parsed as a problem file (see the subsection "Problem descriptions"); any invalid files will be skipped. If every file gets skipped, a special hard-coded problem will be used instead. The resulting non-empty list of problems will be cycled through one at a time; when the player succeeds 15 times, the script will advance to the next one.
 
 ## Problem descriptions
 
 Individual problems describe the board position for the script to create, which pill should be presented to the user, and what target locations constitute a success. They are described in key-value files, and give the following keys special meaning:
 
-* `version`: Must be the singleton list containing the value `1`.
+* `version`: Must be [`1`].
 * `row`: Must be a list containing exactly 16 values. The interpretation of these values is described below.
-* `pill`: This specifies which pill Dr. Mario will throw into the bottle for the player. It must be a singleton list, and the value in it must be two characters long. Each character must be one of `r` (for red), `y` (for yellow), or `b` (for blue). Capitalized letters are permitted. The first character will be the left half of the pill, and the second character the right half.
+* `pill`: This specifies which pill Dr. Mario will throw into the bottle for the player. It must be [**pill**] and **pill** must be two color characters. The first color character describes the left half of the pill, and the second color character the right half.
 * `goal x`: A single number between 0 and 7. The player must lock the pill with its bottom-left corner at this x position to be considered successful. 0 is the left-most column; 7 the right-most.
 * `goal y`: A single number between 0 and 15. The player must lock the pill with its bottom-left corner at this y position to be considered successful. 0 is the bottom row; 15 the top.
 * `goal orientations`: A non-empty list of numbers between 0 and 3. The player must lock the pill in one of the orientations in this list to be considered successful. The number describes how many counterclockwise rotations are needed to get from the initial pill that Dr. Mario threw to the desired orientation.
@@ -80,18 +96,7 @@ The values for the `row` key are pictorial representations of the contents of th
 
 describes a row that has an empty space, two red viruses, a blue pill half, an empty space, a yellow and red pill, and two more empty spaces. The precise format description follows.
 
-A *color* is one of the characters `b`, `r`, `y`, `B`, `R`, or `Y`, and have these meanings:
-
-| Character | Meaning |
-|:---------:|:------- |
-|`b`|blue|
-|`B`|blue|
-|`r`|red|
-|`R`|red|
-|`y`|yellow|
-|`Y`|yellow|
-
-A *shape* is one of the characters `x`, `o`, `<`, `>`, `V`, `v`, or `^`, and have these meanings:
+A *shape character* is one of the characters `x`, `o`, `<`, `>`, `V`, `v`, or `^`, with the following meaning:
 
 | Character | Meaning |
 |:---------:|:------- |
@@ -106,7 +111,7 @@ A *shape* is one of the characters `x`, `o`, `<`, `>`, `V`, `v`, or `^`, and hav
 A *cell* is two characters in one of the following forms:
 
 * The exact string `--`. This indicates an unoccupied space on the playfield.
-* A color followed by a shape. This indicates an occupied space of the given color and shape.
+* A color character followed by a shape character. This indicates an occupied space of the given color and shape.
 * Two hex digits (`0` through `9`, `a` through `f`, or `A` through `F`). The resulting byte will be used to index into Dr. Mario's sprite table.
 
 A *playfield row* is a value containing exactly 8 cells separated by whitespace. The first cell describes the left-most column, the last the right-most column.
