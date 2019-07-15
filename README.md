@@ -26,7 +26,7 @@ In the top left is the average successful frame count. Underneath the average, t
 
 # Quick Start
 
-1. Unzip [the latest release](https://github.com/dmwit/bokrifulse/releases) somewhere; I'll call the directory you chose DIR in the rest of these instructions.
+1. Unzip [the latest release](http://dmwit.com/bokrifulse/00-bokrifulse-latest.zip) somewhere; I'll call the directory you chose DIR in the rest of these instructions.
 2. Start [fceux](http://www.fceux.com/web/home.html) and load the Dr. Mario ROM.
 3. Go to File &rarr; Load Lua Script, navigate to DIR, and choose bokrifulse.lua.
 4. Start a 1 player game. I recommend choosing level 0, but the script will deal with it no matter what settings you choose.
