@@ -32,7 +32,9 @@ unsafeShuffle gen xs = do
 shuffle :: GenIO -> [a] -> IO [a]
 shuffle gen xs = go (length xs) xs where
 	go :: Int -> [a] -> IO [a]
-	go 0 _ = pure []
+	-- 11! fits in 25 bits, and Haskell promises Int holds at least 29 bits, so
+	-- unsafeShuffle is safe
+	go n xs | n <= 12 = unsafeShuffle gen xs
 	go n xs = let n' = n-1 in do
 		ix <- uniformR (0, n') gen
 		let (b, x:e) = splitAt ix xs
