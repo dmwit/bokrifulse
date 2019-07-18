@@ -36,6 +36,7 @@ local default_problem =
 	, goal_x = 3
 	, goal_y = 3
 	, goal_orientations = { 0, 2 }
+	, source = "bokrifulse.lua"
 	}
 local PROBLEMS = { default_problem }
 local CURRENT_PROBLEM = 1
@@ -238,11 +239,12 @@ local function parse_config(filename)
 
 	for _, problem_suffix in pairs(kvs.problem or {}) do
 		local problem_filename = prefix .. problem_suffix
-		local problem = parse_problem(problem_filename)
-		if problem[1] then
-			table.insert(PROBLEMS, problem[2])
+		local PROBLEM = parse_problem(problem_filename)
+		if PROBLEM[1] then
+			PROBLEM[2].source = problem_suffix
+			table.insert(PROBLEMS, PROBLEM[2])
 		else
-			print('Skipping invalid problem description in ' .. problem_filename .. ':\n' .. problem[2])
+			print('Skipping invalid problem description in ' .. problem_filename .. ':\n' .. PROBLEM[2])
 		end
 	end
 
@@ -283,6 +285,8 @@ local num_width_px = 6
 local num_height_px = 9
 local gui_padding_x_px = 9
 local gui_padding_y_px = 9
+local gui_max_x = 256
+local gui_max_y = 224
 local failure_display_time = 90 -- in frames
 
 local function render()
@@ -309,6 +313,8 @@ local function render()
 			LAST_FAILURE_FRAME = nil
 		end
 	end
+
+	gui.text(gui_padding_x_px, gui_max_y - gui_padding_y_px, PROBLEMS[CURRENT_PROBLEM].source)
 end
 
 local initial_state = 0 -- waiting for the user to start the game
