@@ -126,8 +126,6 @@ constrain gen mb tgt = do
 	where
 	go deadRef solution = do
 		b <- mfreeze mb
-		putStrLn "--------"
-		putStr (pp b)
 		(solution', unique, unique') <- findAmbiguities solution (paths gen deadRef b tgt canonicalSrc)
 		case (S.size unique, S.size unique') of
 			(0, 0) -> pure ()
@@ -155,8 +153,6 @@ deleteSuperfluousViruses gen mb tgt = do
 		Just (ps, pss) <- L.uncons (paths gen deadRef b tgt canonicalSrc)
 		(_, unique, unique') <- findAmbiguities ps pss
 		unless (S.null unique && S.null unique') (minfectRB mb pos)
-		putStrLn "--------"
-		mfreeze mb >>= putStr . pp
 
 ppDead :: Set Pill -> String
 ppDead = foldMap $ \p -> concat
@@ -165,14 +161,35 @@ ppDead = foldMap $ \p -> concat
 	, reverse . take 2 . reverse . ("0"++) . show . y . bottomLeftPosition $ p
 	]
 
--- TODO: pretty-print in bokrifulse format
+bokrifulseFormat :: Board -> Pill -> String
+bokrifulseFormat b tgt = unlines $
+	[ "version = 1"
+	, "pill = ry"
+	, "goal x = " ++ show (x (bottomLeftPosition tgt))
+	, "goal y = " ++ show (y (bottomLeftPosition tgt))
+	, "goal orientation = " ++ if orientation (content tgt) == Vertical then "1" else "0"
+	] ++
+	[ "row = " ++ [c | x <- [0..7], c <- fmtCell (unsafeGet b (Position x y))]
+	| y <- [15,14..0]
+	]
+	where
+	fmtCell Empty = "--"
+	fmtCell (Occupied color shape) = [fmtColor color, fmtShape shape]
+	fmtColor Red = 'r'
+	fmtColor Blue = 'b'
+	fmtColor Yellow = 'y'
+	fmtShape Virus = 'x'
+	fmtShape Disconnected = 'o'
+	fmtShape North = '^'
+	fmtShape South = 'v'
+	fmtShape East = '<'
+	fmtShape West = '>'
 
 main :: IO ()
-main = createSystemRandom >>= \gen -> forever $ do
+main = createSystemRandom >>= \gen -> do
 	tgt <- chooseTarget gen
 	mb <- memptyBoard 8 16
-	print tgt
 	constrain gen mb tgt
 	deleteSuperfluousViruses gen mb tgt
-	print tgt
-	getLine
+	b <- munsafeFreeze mb
+	putStr (bokrifulseFormat b tgt)
