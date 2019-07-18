@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import Control.Applicative
@@ -94,14 +95,18 @@ positions ps = S.fromList
 	, y pos < 16
 	]
 
-findAmbiguities :: Set Position -> ListT IO (Set Position) -> IO (Set Position)
-findAmbiguities ps pss = do
-	mpath <- L.uncons pss
-	case mpath of
-		Nothing -> pure S.empty
-		Just (ps', pss') -> if ps == ps'
-			then findAmbiguities ps pss'
-			else pure (S.union (ps S.\\ ps') (ps' S.\\ ps))
+findAmbiguities :: [Pill] -> ListT IO [Pill] -> IO ([Pill], Set Position, Set Position)
+findAmbiguities ps = go where
+	poss = positions ps
+	go pss = L.uncons pss >>= \case
+		Nothing -> pure (ps, S.empty, S.empty)
+		Just (ps', pss') -> if S.null unique && S.null unique'
+			then go pss'
+			else pure (ps', unique, unique')
+			where
+			poss' = positions ps'
+			unique = poss S.\\ poss'
+			unique' = poss' S.\\ poss
 
 canonicalSrc = Pill
 	{ content = PillContent
@@ -113,19 +118,25 @@ canonicalSrc = Pill
 	}
 
 constrain :: GenIO -> IOBoard -> Pill -> IO ()
-constrain gen mb tgt = newIORef S.empty >>= go where
-	go deadRef = do
+constrain gen mb tgt = do
+	deadRef <- newIORef S.empty
+	b <- mfreeze mb
+	Just solution <- L.head (paths gen deadRef b tgt canonicalSrc)
+	go deadRef solution
+	where
+	go deadRef solution = do
 		b <- mfreeze mb
 		putStrLn "--------"
 		putStr (pp b)
-		Just (ps, pss) <- L.uncons (positions <$> paths gen deadRef b tgt canonicalSrc)
-		ambiguities <- findAmbiguities ps pss
-		case S.size ambiguities of
-			0 -> pure ()
-			n -> do
-				ix <- uniformR (0, n-1) gen
-				minfectRB mb (S.elemAt ix ambiguities)
-				go deadRef
+		(solution', unique, unique') <- findAmbiguities solution (paths gen deadRef b tgt canonicalSrc)
+		case (S.size unique, S.size unique') of
+			(0, 0) -> pure ()
+			(n, 0) -> minfectRandom unique  >> go deadRef solution'
+			_      -> minfectRandom unique' >> go deadRef solution
+
+	minfectRandom ps = do
+		ix <- uniformR (0, S.size ps-1) gen
+		minfectRB mb (S.elemAt ix ps)
 
 deleteSuperfluousViruses :: GenIO -> IOBoard -> Pill -> IO ()
 deleteSuperfluousViruses gen mb tgt = do
@@ -141,9 +152,9 @@ deleteSuperfluousViruses gen mb tgt = do
 		deadRef <- newIORef S.empty
 		mclear mb [pos]
 		b <- mfreeze mb
-		Just (ps, pss) <- L.uncons (positions <$> paths gen deadRef b tgt canonicalSrc)
-		ambiguities <- findAmbiguities ps pss
-		unless (S.null ambiguities) (minfectRB mb pos)
+		Just (ps, pss) <- L.uncons (paths gen deadRef b tgt canonicalSrc)
+		(_, unique, unique') <- findAmbiguities ps pss
+		unless (S.null unique && S.null unique') (minfectRB mb pos)
 		putStrLn "--------"
 		mfreeze mb >>= putStr . pp
 
