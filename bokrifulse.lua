@@ -424,8 +424,8 @@ local function locked_action()
 	SUCCESS = SUCCESS and pill_x == problem.goal_x and pill_y == problem.goal_y
 
 	if SUCCESS then
-		local success_count = #SUCCESSES
-		SUCCESSES[success_count+1] = maneuver_frames
+		local success_count = #SUCCESSES + 1
+		SUCCESSES[success_count] = maneuver_frames
 		if success_count >= 15 then
 			change_problem()
 		end
