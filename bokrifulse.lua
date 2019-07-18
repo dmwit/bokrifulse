@@ -423,17 +423,17 @@ local function locked_action()
 	end
 	SUCCESS = SUCCESS and pill_x == problem.goal_x and pill_y == problem.goal_y
 
+	local CHANGE_PROBLEM = joypad.get(1)["up"]
 	if SUCCESS then
 		local success_count = #SUCCESSES + 1
 		SUCCESSES[success_count] = maneuver_frames
-		if success_count >= 15 then
-			change_problem()
-		end
+		CHANGE_PROBLEM = CHANGE_PROBLEM or success_count >= 15
 	else
 		FAILURE_COUNT = FAILURE_COUNT + 1
 		LAST_FAILURE = maneuver_frames
 		LAST_FAILURE_FRAME = emu.framecount()
 	end
+	if CHANGE_PROBLEM then change_problem() end
 
 	CURRENT_STATE = ready_state
 end

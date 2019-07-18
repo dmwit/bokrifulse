@@ -3,6 +3,7 @@
 * Table of Contents
 * What is it?
 * Quick Start
+* Miscellaneous
 * Key-value files
     * Configuration file
     * Problem descriptions
@@ -30,6 +31,10 @@ In the top left is the average successful frame count. Underneath the average, t
 2. Start [fceux](http://www.fceux.com/web/home.html) and load the Dr. Mario ROM.
 3. Go to File &rarr; Load Lua Script, navigate to DIR, and choose bokrifulse.lua.
 4. Start a 1 player game. I recommend choosing level 0, but the script will deal with it no matter what settings you choose.
+
+# Miscellaneous
+
+You may advance to the next problem either automatically by succeeding 15 times or manually by holding up while the pill locks.
 
 # Key-value files
 
