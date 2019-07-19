@@ -30,7 +30,7 @@ release: release.zip
 			exit 1; \
 		fi
 	cp release.zip ~/public_html/bokrifulse/bokrifulse-"$$version".zip
-	ln -sf ~/public_html/bokrifulse/bokrifulse-"$$version".zip ~/public_html/bokrifulse/00-bokrifulse-latest.zip
+	ln -sf bokrifulse-"$$version".zip ~/public_html/bokrifulse/00-bokrifulse-latest.zip
 	unison hcoop
 
 clean:
