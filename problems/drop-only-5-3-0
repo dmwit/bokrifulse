@@ -16,6 +16,6 @@ row = ----------y<r>--
 row = ----------yxrx--
 row = ----------yxrx--
 pill = yr
-goal x = 4
+goal x = 5
 goal y = 3
 goal orientation = 0
