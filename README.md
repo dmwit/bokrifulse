@@ -82,6 +82,8 @@ The top-level configuration must be stored in a file named `config` in the same 
 * `version`: Must be [`1`].
 * `problem`: The values in this list are treated as filenames. They should be relative paths, and will be interpreted as relative to the directory containing `bokrifulse.lua`. Each file referenced will be parsed as a problem file (see the subsection "Problem descriptions"); any invalid files will be skipped. If every file gets skipped, a special hard-coded problem will be used instead. The resulting non-empty list of problems will be cycled through one at a time; when the player succeeds 15 times, the script will advance to the next one.
 
+There are a handful of different example configurations provided with the script that focus on different aspects of Dr. Mario play. You can use them by deleting the provided `config`, copying one of the other example configurations, then renaming it to `config`. You may always return to the default by performing this process with `config.default`.
+
 ## Problem descriptions
 
 Individual problems describe the board position for the script to create, which pill should be presented to the user, and what target locations constitute a success. They are described in key-value files, and give the following keys special meaning:

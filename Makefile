@@ -17,7 +17,7 @@ teaser/palette.png: teaser/original.flv teaser/start.txt teaser/length.txt
 		-vf "scale=256:-1:flags=neighbor,palettegen" \
 		$@
 
-release.zip: bokrifulse.lua config README.md $(wildcard problems/*)
+release.zip: bokrifulse.lua config README.md $(wildcard problems/*) $(wildcard config.*)
 	-rm release.zip
 	zip $@ $^
 
