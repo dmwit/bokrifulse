@@ -362,11 +362,11 @@ local function ready_action()
 	end
 	memory.writebyte(0x31a, problem.pill_left)
 	memory.writebyte(0x31b, problem.pill_right)
-	memory.writebyte(0x30a, problem.speed_adjustment)
 	CURRENT_STATE = awaiting_control_state
 end
 
 local function awaiting_control_action()
+	memory.writebyte(0x30a, PROBLEMS[CURRENT_PROBLEM].speed_adjustment)
 	local drop = memory.readbyte(0x312)
 	if drop > 0 then
 		MANEUVER_START_FRAME = emu.framecount()
