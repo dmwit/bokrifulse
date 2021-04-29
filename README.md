@@ -44,7 +44,7 @@ Bo Krif Ulse stores all of its configuration and runtime data in key-value files
 
     dragons = cool
 
-is a valid key-value file that associates the key `dragons` with the list of values [`cool`]; both the first line and the blank line following it count as comments and are ignored. Some values have to be in a specific format. A precise description of the syntax and special value formats follows.
+is a valid key-value file that associates the key `dragons` with the list of values [`cool`]; both the first line and the blank line following it count as comments and are ignored. Some values have to be in a specific format. A precise description of the syntax and special value formats follows. There are also examples of both configurations and problems included, as files whose name start with `config` and in the `problems` directory, respectively; the format is straightforward enough that you ought to be able to guess pretty much everything just by looking at a few of these examples.
 
 Files are read in the latin-1 encoding because this is a lua script and I am lazy. A *whitespace character* is a tab, newline, vertical line feed, form feed, carriage return, or space (bytes 9, 10, 11, 12, 13, and 32). *Whitespace* is any sequence of whitespace characters (including the empty sequence). A *line break* is a newline, vertical line feed, form feed, or carriage return.
 
