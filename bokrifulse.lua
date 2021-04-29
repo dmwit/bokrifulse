@@ -45,6 +45,13 @@ local FAILURE_COUNT = 0
 local LAST_FAILURE = nil
 local LAST_FAILURE_FRAME = nil
 
+-- The built-in print is a bit broken: in some versions, it doesn't handle
+-- floating point numbers correctly, and in some versions it doesn't even print
+-- anything.
+local function print(s)
+	io.write(s .. '\n')
+end
+
 -- Where you would write
 --     x <- act
 --     foo
