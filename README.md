@@ -88,7 +88,7 @@ There are a handful of different example configurations provided with the script
 
 Individual problems describe the board position for the script to create, which pill should be presented to the user, and what target locations constitute a success. They are described in key-value files, and give the following keys special meaning:
 
-* `version`: Must be [`1`].
+* `version`: Must be [`1`] or [`2`]. Choosing one version or the other has no further effect on the meaning of other keys; however, there are some keys that previous releases of bokrifulse will silently ignore. These keys are marked below with a *Since:* annotation. If you define these keys, you should set the version to be at least as large as problem version where they were introduced, so that previous releases of bokrifulse will not try to load these problems and silently mangle them.
 * `row`: Must be a list containing exactly 16 values. The interpretation of these values is described below.
 * `pill`: This specifies which pill Dr. Mario will throw into the bottle for the player. It must be [**pill**] and **pill** must be two color characters. The first color character describes the left half of the pill, and the second color character the right half.
 * `goal x`: A single number between 0 and 7. The player must lock the pill with its bottom-left corner at this x position to be considered successful. 0 is the left-most column; 7 the right-most.
@@ -96,6 +96,12 @@ Individual problems describe the board position for the script to create, which 
 * `goal orientations`: A non-empty list of numbers between 0 and 3. The player must lock the pill in one of the orientations in this list to be considered successful. The number describes how many counterclockwise rotations are needed to get from the initial pill that Dr. Mario threw to the desired orientation.
 * `speed`: A single number between 0 and 49; default 0. The game will behave as if enough pills have dropped since the start of the level to increase the speed this many times.
 * `viruses`: A single number between 1 and 99; default 99. This one is just for fun; it sets the virus count in the lower right of the screen to the given number.
+* `das`: A single number between -1 and 15; default -1. Unless this is -1, the game will initialize the DAS counter to this number before each pill. Higher numbers are "more charged" -- i.e. the pill will move sooner. When this is -1, the DAS counter is not changed, and so carries over from the previous pill, just as in the real game.
+
+    *Since: 2*
+* `failure das`: A list of numbers between 0 and 15. The player must lock the pill when their DAS counter is not one of these numbers.
+
+    *Since: 2*
 
 The values for the `row` key are pictorial representations of the contents of the board that the player will be presented with. They use `--` for empty space, and a pair of characters describing the color and shape of a cell for the occupied spaces. For example, the string
 

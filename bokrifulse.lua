@@ -36,6 +36,8 @@ local default_problem =
 	, goal_x = 3
 	, goal_y = 3
 	, goal_orientations = { 0, 2 }
+	, das = -1
+	, failure_das = {}
 	, source = "bokrifulse.lua"
 	}
 local PROBLEMS = { default_problem }
@@ -44,6 +46,7 @@ local SUCCESSES = {}
 local FAILURE_COUNT = 0
 local LAST_FAILURE = nil
 local LAST_FAILURE_FRAME = nil
+local LAST_DAS_COUNTER = nil
 
 -- The built-in print is a bit broken: in some versions, it doesn't handle
 -- floating point numbers correctly, and in some versions it doesn't even print
@@ -119,17 +122,42 @@ local function parse_file(filename)
 	return {SUCCESS, RESULT}
 end
 
-local function check_version(kvs, expected_version)
+local function check_version(kvs, expected_versions)
 	local version_list = kvs['version'] or {}
+
+	local EXPECTEDS_WITH_OR = '<none>'
+	local EXPECTEDS_WITHOUT_OR = '<none>'
+	local COMMA = ''
+	local NUM_VERSIONS = 0
+
+	-- This is a bit clever. When there are no versions, we'll claim we already
+	-- found a match and use `or`'s short-circuiting to avoid ever indexing
+	-- version_list. Then later we'll double check not just that we "found a
+	-- match" but also that there is a version available.
+	local FOUND_MATCH = #version_list < 1
+
+	for _, version in pairs(expected_versions) do
+		if 0 == NUM_VERSIONS then
+			EXPECTEDS_WITH_OR = version
+			EXPECTEDS_WITHOUT_OR = version
+		else
+			if 2 == NUM_VERSIONS then COMMA = ',' end
+			EXPECTEDS_WITH_OR = EXPECTEDS_WITHOUT_OR .. COMMA .. ' or ' .. version
+			EXPECTEDS_WITHOUT_OR = EXPECTEDS_WITHOUT_OR .. ', ' .. version
+		end
+		NUM_VERSIONS = NUM_VERSIONS + 1
+		FOUND_MATCH = FOUND_MATCH or version == version_list[1]
+	end
+
 	return bind({#version_list == 1, ('Expected exactly one version (saw %d)'):format(#version_list)}, function()
-	return bind({version_list[1] == expected_version, ('Expected version %s (saw %s)'):format(expected_version, version_list[1])}, function()
+	return bind({FOUND_MATCH, ('Expected version %s (saw %s)'):format(EXPECTEDS_WITH_OR, version_list[1])}, function()
 	return {true, kvs}
 	end) end)
 end
 
-local function parse_versioned_file(filename, version)
+local function parse_versioned_file(filename, versions)
 	return bind(parse_file(filename), function(kvs)
-	return check_version(kvs, version)
+	return check_version(kvs, versions)
 	end)
 end
 
@@ -204,6 +232,10 @@ local function parse_orientations(vs)
 	end)
 end
 
+local function parse_failure_dass(vs)
+	return forM(vs, function(v) return parse_number(v, 'failure das', 0, 15) end)
+end
+
 local function concat(xss)
 	local YS = {}
 	local I = 1
@@ -217,7 +249,7 @@ local function concat(xss)
 end
 
 local function parse_problem(filename)
-	return bind(parse_versioned_file(filename, '1'), function(kvs)
+	return bind(parse_versioned_file(filename, {'1', '2'}), function(kvs)
 	local row_count = #(kvs.row or {})
 	return bind({row_count, ('Expected exactly 16 rows (saw %d)'):format(row_count)}, function()
 	return bind(forM(kvs.row, parse_problem_row), function(rows)
@@ -227,6 +259,8 @@ local function parse_problem(filename)
 	return bind(parse_single_number(kvs, 'goal x', {}, 0, 7), function(goal_x)
 	return bind(parse_single_number(kvs, 'goal y', {}, 0, 15), function(goal_y)
 	return bind(parse_orientations(kvs['goal orientation'] or {}), function(goal_orientations)
+	return bind(parse_single_number(kvs, 'das', {'-1'}, -1, 15), function(das)
+	return bind(parse_failure_dass(kvs['failure das'] or {}), function(failure_das)
 	return {true,
 		{ board = concat(rows)
 		, bcd_virus_count = to_bcd(virus_count)
@@ -236,13 +270,15 @@ local function parse_problem(filename)
 		, goal_x = goal_x
 		, goal_y = goal_y
 		, goal_orientations = goal_orientations
+		, das = das
+		, failure_das = failure_das
 		}}
-	end) end) end) end) end) end) end) end) end)
+	end) end) end) end) end) end) end) end) end) end) end)
 end
 
 local function parse_config(filename)
 	local PROBLEMS = {}
-	return bind(parse_versioned_file(filename, '1'), function(kvs)
+	return bind(parse_versioned_file(filename, {'1'}), function(kvs)
 
 	for _, problem_suffix in pairs(kvs.problem or {}) do
 		local problem_filename = prefix .. problem_suffix
@@ -321,6 +357,17 @@ local function render()
 		end
 	end
 
+	if #PROBLEMS[CURRENT_PROBLEM].failure_das > 0 then
+		local FAILURE_DASS = 'avoid:'
+		for _, bad_das_counter in ipairs(PROBLEMS[CURRENT_PROBLEM].failure_das) do
+			FAILURE_DASS = FAILURE_DASS .. ' ' .. bad_das_counter
+		end
+		if LAST_DAS_COUNTER then
+			gui.text(3*gui_padding_x_px + 10*num_width_px, gui_padding_y_px + num_height_px, 'charge: ' .. LAST_DAS_COUNTER)
+		end
+		gui.text(3*gui_padding_x_px + 10*num_width_px, gui_padding_y_px + 2*num_height_px, FAILURE_DASS)
+	end
+
 	gui.text(gui_padding_x_px, gui_max_y - gui_padding_y_px, PROBLEMS[CURRENT_PROBLEM].source)
 end
 
@@ -369,6 +416,9 @@ local function ready_action()
 	end
 	memory.writebyte(0x31a, problem.pill_left)
 	memory.writebyte(0x31b, problem.pill_right)
+	if problem.das >= 0 then
+		memory.writebyte(0x313, problem.das)
+	end
 	CURRENT_STATE = awaiting_control_state
 end
 
@@ -429,10 +479,14 @@ local function locked_action()
 	-- they can. So we'll just report a one-frame-incorrect answer in the
 	-- vanishingly unlikely case that all the conditions above are met.
 	local maneuver_frames = emu.framecount() - 3 - MANEUVER_START_FRAME + 1
+	LAST_DAS_COUNTER = memory.readbyte(0x313)
 
 	local SUCCESS = false
 	for _, goal_orientation in pairs(problem.goal_orientations) do
 		SUCCESS = SUCCESS or pill_orientation == goal_orientation
+	end
+	for _, bad_das_counter in pairs(problem.failure_das) do
+		SUCCESS = SUCCESS and LAST_DAS_COUNTER ~= bad_das_counter
 	end
 	SUCCESS = SUCCESS and pill_x == problem.goal_x and pill_y == problem.goal_y
 
